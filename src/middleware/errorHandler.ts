@@ -25,3 +25,4 @@ export function errorHandler(
     ...(env.NODE_ENV === "development" ? { stack: err.stack } : {})
   });
 }
+

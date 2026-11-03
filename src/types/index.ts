@@ -66,3 +66,4 @@ export interface WishlistDocument {
   studioId: ObjectId | string;
   createdAt: Date;
 }
+

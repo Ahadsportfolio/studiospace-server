@@ -5,3 +5,4 @@ export function notFoundHandler(req: Request, res: Response): void {
     message: `Route not found: ${req.method} ${req.originalUrl}`
   });
 }
+

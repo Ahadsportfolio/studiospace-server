@@ -49,3 +49,4 @@ export const env = {
   NODE_ENV: process.env.NODE_ENV as string,
   SEED_OWNER_EMAIL: process.env.SEED_OWNER_EMAIL || "host@example.com"
 } as const;
+

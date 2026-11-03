@@ -38,3 +38,4 @@ bootstrap().catch((error) => {
   console.error("[Bootstrap] Fatal startup error:", error);
   process.exit(1);
 });
+
