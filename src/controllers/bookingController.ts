@@ -241,3 +241,161 @@ export async function cancelBooking(
     next(error);
   }
 }
+
+/**
+ * PATCH /api/bookings/:id/status
+ * Authenticated via verifyJWT.
+ * Host only (403 if not host).
+ * Allowed status values: "Confirmed" | "Completed" | "Cancelled".
+ * On "Confirmed": re-runs overlap check excluding same _id; returns 409 if collision occurs.
+ */
+export async function updateBookingStatus(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user || !req.user.email) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { id } = req.params;
+
+    if (
+      typeof id !== "string" ||
+      !ObjectId.isValid(id) ||
+      !/^[0-9a-fA-F]{24}$/.test(id)
+    ) {
+      res.status(400).json({ message: "Invalid booking ID format" });
+      return;
+    }
+
+    const { status } = req.body || {};
+    const allowedStatuses = ["Confirmed", "Completed", "Cancelled"];
+
+    if (typeof status !== "string" || !allowedStatuses.includes(status)) {
+      res.status(400).json({
+        message: "Status must be one of: Confirmed, Completed, Cancelled"
+      });
+      return;
+    }
+
+    const bookings = getBookingsCollection();
+    const booking = await bookings.findOne({ _id: new ObjectId(id) });
+
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found" });
+      return;
+    }
+
+    // Host only check
+    if (booking.hostEmail.toLowerCase() !== req.user.email.toLowerCase()) {
+      res.status(403).json({
+        message: "Forbidden: Only the studio host can update booking status"
+      });
+      return;
+    }
+
+    // On status -> "Confirmed", re-run overlap excluding same _id
+    if (status === "Confirmed") {
+      const isOverlapping = await checkBookingOverlap({
+        studioId: booking.studioId,
+        startAt: booking.startAt,
+        endAt: booking.endAt,
+        excludeBookingId: booking._id
+      });
+
+      if (isOverlapping) {
+        res.status(409).json({
+          message: "This time slot is already booked. Please choose a different time."
+        });
+        return;
+      }
+    }
+
+    await bookings.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status: status as any } }
+    );
+
+    const updatedBooking = await bookings.findOne({ _id: new ObjectId(id) });
+    res.status(200).json(updatedBooking);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/studios/:id/availability?date=YYYY-MM-DD
+ * Public endpoint.
+ * Returns array of confirmed booking ranges for the studio on the specified date:
+ * [ { startTime, endTime, startAt, endAt } ]
+ */
+export async function getStudioAvailability(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    const { id } = req.params;
+
+    if (
+      typeof id !== "string" ||
+      !ObjectId.isValid(id) ||
+      !/^[0-9a-fA-F]{24}$/.test(id)
+    ) {
+      res.status(400).json({ message: "Invalid studio ID format" });
+      return;
+    }
+
+    const { date } = req.query;
+
+    if (typeof date !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      res.status(400).json({
+        message: "Date query parameter is required in YYYY-MM-DD format"
+      });
+      return;
+    }
+
+    const parsedDate = new Date(`${date}T00:00:00.000Z`);
+    if (isNaN(parsedDate.getTime())) {
+      res.status(400).json({ message: "Invalid date format" });
+      return;
+    }
+
+    const studios = getStudiosCollection();
+    const studio = await studios.findOne({ _id: new ObjectId(id) });
+    if (!studio) {
+      res.status(404).json({ message: "Studio not found" });
+      return;
+    }
+
+    const bookings = getBookingsCollection();
+    const dayStart = new Date(`${date}T00:00:00.000Z`);
+    const dayEnd = new Date(`${date}T23:59:59.999Z`);
+
+    const confirmedBookings = await bookings
+      .find({
+        studioId: { $in: [studio._id, id, new ObjectId(id)] as any },
+        status: "Confirmed",
+        $or: [
+          { date: date },
+          { startAt: { $lt: dayEnd }, endAt: { $gt: dayStart } }
+        ]
+      })
+      .sort({ startAt: 1 })
+      .toArray();
+
+    const confirmedRanges = confirmedBookings.map((b) => ({
+      startTime: b.startTime,
+      endTime: b.endTime,
+      startAt: b.startAt,
+      endAt: b.endAt
+    }));
+
+    res.status(200).json(confirmedRanges);
+  } catch (error) {
+    next(error);
+  }
+}

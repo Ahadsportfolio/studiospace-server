@@ -8,6 +8,7 @@ import {
   updateStudio,
   deleteStudio
 } from "../controllers/studioController";
+import { getStudioAvailability } from "../controllers/bookingController";
 import { verifyJWT } from "../middleware/verifyJWT";
 
 const router = Router();
@@ -15,6 +16,9 @@ const router = Router();
 // Public studio endpoints
 router.get("/", getStudios);
 router.get("/categories/counts", getCategoryCounts);
+
+// Studio availability endpoint (public, Confirmed ranges for a day)
+router.get("/:id/availability", getStudioAvailability);
 
 // Protected studio endpoints (registered before /:id so /mine is not captured as an :id)
 router.get("/mine", verifyJWT, getMyStudios);

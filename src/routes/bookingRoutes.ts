@@ -3,7 +3,8 @@ import {
   createBooking,
   getMyBookings,
   getHostBookings,
-  cancelBooking
+  cancelBooking,
+  updateBookingStatus
 } from "../controllers/bookingController";
 import { verifyJWT } from "../middleware/verifyJWT";
 
@@ -20,5 +21,8 @@ router.post("/", verifyJWT, createBooking);
 
 // PATCH /api/bookings/:id/cancel - cancel pending booking (booker only)
 router.patch("/:id/cancel", verifyJWT, cancelBooking);
+
+// PATCH /api/bookings/:id/status - update booking status (host only: Confirmed|Completed|Cancelled)
+router.patch("/:id/status", verifyJWT, updateBookingStatus);
 
 export default router;
