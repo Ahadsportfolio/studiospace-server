@@ -4,6 +4,8 @@ import { StudioDocument, BookingDocument, WishlistDocument } from "../types";
 
 let client: MongoClient | null = null;
 let db: Db | null = null;
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+let memoryServer: any = null;
 
 export async function createIndexes(database: Db): Promise<void> {
   // 1. studios collection indexes (PRD.md: ownerEmail, category, text(title,location), createdAt desc)
@@ -51,7 +53,26 @@ export async function connectDB(): Promise<Db> {
     await createIndexes(db);
     return db;
   } catch (error) {
-    console.error(`[Database] Connection error: ${(error as Error).message}`);
+    console.warn(`[Database] Connection to remote MongoDB failed: ${(error as Error).message}`);
+
+    if (env.NODE_ENV === "development") {
+      try {
+        console.log("[Database] Spawning in-memory MongoDB fallback for local development...");
+        const { MongoMemoryServer } = await import("mongodb-memory-server");
+        memoryServer = await MongoMemoryServer.create();
+        const memUri = memoryServer.getUri();
+        client = new MongoClient(memUri);
+        await client.connect();
+        db = client.db(env.DB_NAME);
+        console.log(`[Database] Connected to in-memory fallback database: ${env.DB_NAME}`);
+
+        await createIndexes(db);
+        return db;
+      } catch (memErr) {
+        console.error(`[Database] In-memory MongoDB fallback failed: ${(memErr as Error).message}`);
+      }
+    }
+
     throw error;
   }
 }
@@ -92,6 +113,11 @@ export async function closeDB(): Promise<void> {
     client = null;
     db = null;
     console.log("[Database] MongoDB connection closed.");
+  }
+  if (memoryServer) {
+    await memoryServer.stop();
+    memoryServer = null;
+    console.log("[Database] In-memory MongoDB stopped.");
   }
 }
 

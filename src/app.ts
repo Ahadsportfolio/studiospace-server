@@ -5,6 +5,7 @@ import { env } from "./config/env";
 import { isDbConnected } from "./config/db";
 import { notFoundHandler } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
+import studioRouter from "./routes/studioRoutes";
 
 const app: Application = express();
 
@@ -29,6 +30,9 @@ app.get("/api/health", (_req: Request, res: Response) => {
     timestamp: new Date().toISOString()
   });
 });
+
+// Studio Routes
+app.use("/api/studios", studioRouter);
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);

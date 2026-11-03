@@ -1,10 +1,18 @@
 import app from "./app";
 import { env } from "./config/env";
-import { connectDB, closeDB } from "./config/db";
+import { connectDB, closeDB, getStudiosCollection } from "./config/db";
+import { seedSampleStudios } from "./seed/sampleStudios";
 
 async function bootstrap() {
   try {
     await connectDB();
+
+    // Auto-seed sample studios if empty (development convenience)
+    const studiosCount = await getStudiosCollection().countDocuments();
+    if (studiosCount === 0) {
+      console.log("[Bootstrap] Studios collection is empty. Seeding initial sample studios...");
+      await seedSampleStudios();
+    }
   } catch (err) {
     console.error(
       "[Bootstrap] Warning: Initial MongoDB connection failed:",
