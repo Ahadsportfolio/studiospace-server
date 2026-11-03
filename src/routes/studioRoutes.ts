@@ -2,14 +2,27 @@ import { Router } from "express";
 import {
   getStudios,
   getStudioById,
-  getCategoryCounts
+  getCategoryCounts,
+  getMyStudios,
+  createStudio,
+  updateStudio,
+  deleteStudio
 } from "../controllers/studioController";
+import { verifyJWT } from "../middleware/verifyJWT";
 
 const router = Router();
 
 // Public studio endpoints
 router.get("/", getStudios);
 router.get("/categories/counts", getCategoryCounts);
+
+// Protected studio endpoints (registered before /:id so /mine is not captured as an :id)
+router.get("/mine", verifyJWT, getMyStudios);
+router.post("/", verifyJWT, createStudio);
+router.put("/:id", verifyJWT, updateStudio);
+router.delete("/:id", verifyJWT, deleteStudio);
+
+// Studio details endpoint (must be after /mine and /categories/counts)
 router.get("/:id", getStudioById);
 
 export default router;
