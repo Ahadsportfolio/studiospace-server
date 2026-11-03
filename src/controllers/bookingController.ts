@@ -114,3 +114,130 @@ export async function createBooking(
     next(error);
   }
 }
+
+/**
+ * GET /api/bookings/my
+ * Authenticated via verifyJWT.
+ * Returns all bookings made by the authenticated user, sorted newest first.
+ */
+export async function getMyBookings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user || !req.user.email) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const bookings = getBookingsCollection();
+    const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const myBookings = await bookings
+      .find({
+        userEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") }
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.status(200).json(myBookings);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * GET /api/bookings/host
+ * Authenticated via verifyJWT.
+ * Returns all booking requests for studios owned by the authenticated host, sorted newest first.
+ */
+export async function getHostBookings(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user || !req.user.email) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const bookings = getBookingsCollection();
+    const escapedEmail = req.user.email.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    const hostBookings = await bookings
+      .find({
+        hostEmail: { $regex: new RegExp(`^${escapedEmail}$`, "i") }
+      })
+      .sort({ createdAt: -1 })
+      .toArray();
+
+    res.status(200).json(hostBookings);
+  } catch (error) {
+    next(error);
+  }
+}
+
+/**
+ * PATCH /api/bookings/:id/cancel
+ * Authenticated via verifyJWT.
+ * Booker only (403 if not booker).
+ * Pending only (400 if not Pending).
+ * Sets status to "Cancelled".
+ */
+export async function cancelBooking(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  try {
+    if (!req.user || !req.user.email) {
+      res.status(401).json({ message: "Unauthorized" });
+      return;
+    }
+
+    const { id } = req.params;
+
+    if (
+      typeof id !== "string" ||
+      !ObjectId.isValid(id) ||
+      !/^[0-9a-fA-F]{24}$/.test(id)
+    ) {
+      res.status(400).json({ message: "Invalid booking ID format" });
+      return;
+    }
+
+    const bookings = getBookingsCollection();
+    const booking = await bookings.findOne({ _id: new ObjectId(id) });
+
+    if (!booking) {
+      res.status(404).json({ message: "Booking not found" });
+      return;
+    }
+
+    // Only the creator who made the booking can cancel via this endpoint
+    if (booking.userEmail.toLowerCase() !== req.user.email.toLowerCase()) {
+      res.status(403).json({
+        message: "Forbidden: You can only cancel your own bookings"
+      });
+      return;
+    }
+
+    // Cancellation is only permitted for bookings with Pending status
+    if (booking.status !== "Pending") {
+      res.status(400).json({
+        message: "Only bookings with Pending status can be cancelled"
+      });
+      return;
+    }
+
+    await bookings.updateOne(
+      { _id: new ObjectId(id) },
+      { $set: { status: "Cancelled" } }
+    );
+
+    const updatedBooking = await bookings.findOne({ _id: new ObjectId(id) });
+    res.status(200).json(updatedBooking);
+  } catch (error) {
+    next(error);
+  }
+}
