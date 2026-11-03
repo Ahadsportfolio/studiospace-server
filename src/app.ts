@@ -7,6 +7,7 @@ import { notFoundHandler } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 import studioRouter from "./routes/studioRoutes";
 import authRouter from "./routes/authRoutes";
+import bookingRouter from "./routes/bookingRoutes";
 
 const app: Application = express();
 
@@ -37,6 +38,9 @@ app.use("/api/studios", studioRouter);
 
 // Auth Routes
 app.use("/api/auth", authRouter);
+
+// Booking Routes
+app.use("/api/bookings", bookingRouter);
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);
