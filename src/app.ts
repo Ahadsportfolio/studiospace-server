@@ -6,6 +6,7 @@ import { isDbConnected } from "./config/db";
 import { notFoundHandler } from "./middleware/notFound";
 import { errorHandler } from "./middleware/errorHandler";
 import studioRouter from "./routes/studioRoutes";
+import authRouter from "./routes/authRoutes";
 
 const app: Application = express();
 
@@ -33,6 +34,9 @@ app.get("/api/health", (_req: Request, res: Response) => {
 
 // Studio Routes
 app.use("/api/studios", studioRouter);
+
+// Auth Routes
+app.use("/api/auth", authRouter);
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);

@@ -2,6 +2,7 @@ import app from "./app";
 import { env } from "./config/env";
 import { connectDB, closeDB, getStudiosCollection } from "./config/db";
 import { seedSampleStudios } from "./seed/sampleStudios";
+import { seedTestAuth } from "./seed/seedTestAuth";
 
 async function bootstrap() {
   try {
@@ -12,6 +13,11 @@ async function bootstrap() {
     if (studiosCount === 0) {
       console.log("[Bootstrap] Studios collection is empty. Seeding initial sample studios...");
       await seedSampleStudios();
+    }
+
+    // Seed test auth session in development for testing endpoints
+    if (env.NODE_ENV === "development") {
+      await seedTestAuth();
     }
   } catch (err) {
     console.error(

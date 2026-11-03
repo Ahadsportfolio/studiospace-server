@@ -67,3 +67,39 @@ export interface WishlistDocument {
   createdAt: Date;
 }
 
+export interface JwtUserPayload {
+  email: string;
+  name: string;
+  photo?: string;
+}
+
+export interface BetterAuthUserDocument {
+  _id?: ObjectId | string;
+  name: string;
+  email: string;
+  image?: string;
+  emailVerified?: boolean;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+export interface BetterAuthSessionDocument {
+  _id?: ObjectId | string;
+  userId: string;
+  token: string;
+  expiresAt: Date;
+  ipAddress?: string;
+  userAgent?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+}
+
+declare global {
+  namespace Express {
+    interface Request {
+      user?: JwtUserPayload;
+    }
+  }
+}
+
+
