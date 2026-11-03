@@ -13,3 +13,4 @@ router.get("/categories/counts", getCategoryCounts);
 router.get("/:id", getStudioById);
 
 export default router;
+
