@@ -14,3 +14,4 @@ router.post("/:studioId", verifyJWT, toggleWishlist);
 router.post("/:studioId/toggle", verifyJWT, toggleWishlist);
 
 export default router;
+
