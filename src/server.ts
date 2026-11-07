@@ -1,18 +1,18 @@
 import app from "./app";
 import { env } from "./config/env";
 import { connectDB, closeDB, getStudiosCollection } from "./config/db";
-import { seedSampleStudios } from "./seed/sampleStudios";
+import { seedStudios } from "./seed/studios.seed";
 import { seedTestAuth } from "./seed/seedTestAuth";
 
 async function bootstrap() {
   try {
     await connectDB();
 
-    // Auto-seed sample studios if empty (development convenience)
+    // Auto-seed studios if empty (convenience for fresh installs/deployments)
     const studiosCount = await getStudiosCollection().countDocuments();
     if (studiosCount === 0) {
-      console.log("[Bootstrap] Studios collection is empty. Seeding initial sample studios...");
-      await seedSampleStudios();
+      console.log("[Bootstrap] Studios collection is empty. Seeding initial 12 studios...");
+      await seedStudios();
     }
 
     // Seed test auth session in development for testing endpoints
@@ -52,4 +52,6 @@ bootstrap().catch((error) => {
   console.error("[Bootstrap] Fatal startup error:", error);
   process.exit(1);
 });
+
+export default app;
 

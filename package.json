@@ -7,8 +7,10 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc",
     "start": "node dist/server.js",
+    "seed": "tsx src/seed/studios.seed.ts",
     "seed:samples": "tsx src/seed/sampleStudios.ts",
-    "verify:bookings": "tsx src/scripts/verifyBookingScenarios.ts"
+    "verify:bookings": "tsx src/scripts/verifyBookingScenarios.ts",
+    "verify:wishlist": "tsx src/scripts/verifyWishlistScenarios.ts"
   },
   "repository": {
     "type": "git",

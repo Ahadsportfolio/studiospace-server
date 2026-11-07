@@ -10,6 +10,7 @@ Express + TypeScript + MongoDB API for StudioSpace.
 - JWT in HTTPOnly cookies; 401 for unauthenticated, 403 for non-owner
 - Booking creation with overlap check against Confirmed bookings (409 on collision)
 - Host booking status management and availability endpoint
+- Wishlist toggle and saved studios retrieval (POST /api/wishlist/:studioId, GET /api/wishlist)
 - Search, filter, sort and pagination
 
 ## Setup

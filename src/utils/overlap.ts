@@ -152,3 +152,4 @@ export async function checkBookingOverlap(
   const conflict = await bookings.findOne(query);
   return conflict !== null;
 }
+

@@ -8,13 +8,18 @@ import { errorHandler } from "./middleware/errorHandler";
 import studioRouter from "./routes/studioRoutes";
 import authRouter from "./routes/authRoutes";
 import bookingRouter from "./routes/bookingRoutes";
+import wishlistRouter from "./routes/wishlistRoutes";
 
 const app: Application = express();
 
-// Enable CORS for client with credentials
+// Enable CORS for client with credentials (supports single URL or comma-separated URLs)
+const allowedOrigins = env.CLIENT_URL.includes(",")
+  ? env.CLIENT_URL.split(",").map((url) => url.trim()).filter(Boolean)
+  : env.CLIENT_URL;
+
 app.use(
   cors({
-    origin: env.CLIENT_URL,
+    origin: allowedOrigins,
     credentials: true
   })
 );
@@ -41,6 +46,9 @@ app.use("/api/auth", authRouter);
 
 // Booking Routes
 app.use("/api/bookings", bookingRouter);
+
+// Wishlist Routes
+app.use("/api/wishlist", wishlistRouter);
 
 // 404 handler for unmatched routes
 app.use(notFoundHandler);
