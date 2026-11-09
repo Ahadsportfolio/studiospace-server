@@ -12,14 +12,40 @@ import wishlistRouter from "./routes/wishlistRoutes";
 
 const app: Application = express();
 
-// Enable CORS for client with credentials (supports single URL or comma-separated URLs)
-const allowedOrigins = env.CLIENT_URL.includes(",")
-  ? env.CLIENT_URL.split(",").map((url) => url.trim()).filter(Boolean)
-  : env.CLIENT_URL;
+// Parse configured origins (strip trailing slashes, support comma-separated list)
+const configuredOrigins = (env.CLIENT_URL || "")
+  .split(",")
+  .map((url) => url.trim().replace(/\/+$/, ""))
+  .filter(Boolean);
+
+const isOriginAllowed = (origin: string | undefined): boolean => {
+  // Allow non-browser requests (e.g. mobile apps, curl, server-to-server)
+  if (!origin) return true;
+
+  const normalized = origin.trim().replace(/\/+$/, "");
+
+  // Match explicitly configured client origins
+  if (configuredOrigins.includes(normalized)) return true;
+
+  // Match localhost and 127.0.0.1 on any port for local development
+  if (/^http:\/\/localhost(:\d+)?$/.test(normalized)) return true;
+  if (/^http:\/\/127\.0\.0\.1(:\d+)?$/.test(normalized)) return true;
+
+  // Match Vercel preview and production deployments (*.vercel.app)
+  if (/^https:\/\/[a-zA-Z0-9_-]+\.vercel\.app$/i.test(normalized)) return true;
+
+  return false;
+};
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      if (isOriginAllowed(origin)) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
     credentials: true
   })
 );
